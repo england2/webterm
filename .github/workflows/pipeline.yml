@@ -1,0 +1,126 @@
+name: "Webterm pipeline"
+
+permissions:
+  contents: write
+  packages: write
+
+on:
+  # blank `workflow_dispatch:` allows for ad-hoc workflow runs via the github web ui
+  workflow_dispatch:
+  push:
+
+jobs:
+  build-and-push:
+    if: github.event_name == 'workflow_dispatch' || github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    env:
+      IMAGE_REGISTRY: ghcr.io/${{ github.repository_owner }}
+      IMAGE_TAG: ${{ github.sha }}
+    strategy:
+      matrix:
+        include:
+          - context: webserver
+            dockerfile: webserver/Dockerfile
+            image_name: webterm-webserver
+            test_type: node
+
+          - context: pseudo-terminal-manager
+            dockerfile: pseudo-terminal-manager/Dockerfile
+            image_name: webterm-pseudo-terminal-manager
+            test_type: go
+
+          - context: pseudo-terminal
+            dockerfile: pseudo-terminal/Dockerfile
+            image_name: webterm-pseudo-terminal
+            test_type: node
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GHCR_PAT }}
+
+      - name: Set up Go
+        if: matrix.test_type == 'go'
+        uses: actions/setup-go@v6
+        with:
+          go-version-file: pseudo-terminal-manager/pseudo-terminal-manager-api/go.mod
+          cache-dependency-path: pseudo-terminal-manager/pseudo-terminal-manager-api/go.sum
+
+      - name: Run Go tests
+        if: matrix.test_type == 'go'
+        working-directory: pseudo-terminal-manager/pseudo-terminal-manager-api
+        run: go test ./...
+
+      - name: Set up Node
+        if: matrix.test_type == 'node'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Run webserver syntax checks
+        if: matrix.image_name == 'webterm-webserver'
+        run: |
+          node --check webserver/app/apiEndpoints.js
+          node --check webserver/app/server.js
+          node --check webserver/app/public/index.js
+
+      - name: Run pseudo-terminal syntax checks
+        if: matrix.image_name == 'webterm-pseudo-terminal'
+        run: node --check pseudo-terminal/to-copy-inside/containerPseudoTerminal.js
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GHCR_PAT }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          tags: ${{ env.IMAGE_REGISTRY }}/${{ matrix.image_name }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha,scope=${{ matrix.image_name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.image_name }}
+
+  update-helm-values:
+    runs-on: ubuntu-latest
+    needs: build-and-push
+    if: github.ref == 'refs/heads/main' && github.actor != 'github-actions[bot]'
+    env:
+      VALUES_FILE: helm/values.yaml
+      IMAGE_TAG: ${{ github.sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          token: ${{ secrets.GHCR_PAT }}
+          ref: main
+
+      - name: Update image tags
+        uses: mikefarah/yq@v4.44.3
+        env:
+          IMAGE_TAG: ${{ env.IMAGE_TAG }}
+        with:
+          cmd: >-
+            yq -i
+            '.webserver.image.tag = strenv(IMAGE_TAG) |
+            .manager.image.tag = strenv(IMAGE_TAG) |
+            .terminals.image.tag = strenv(IMAGE_TAG)'
+            '${{ env.VALUES_FILE }}'
+
+      - name: Commit and push
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$VALUES_FILE"
+          git diff --cached --quiet && exit 0
+          git commit -m "deploy images for ${GITHUB_SHA} [skip ci]"
+          git push origin HEAD:main

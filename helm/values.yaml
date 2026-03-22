@@ -1,4 +1,5 @@
-imagePullSecrets: []
+imagePullSecrets:
+  - name: ghcr-secret
 nameOverride: ""
 fullnameOverride: ""
 
@@ -6,7 +7,7 @@ webserver:
   enabled: true
   replicaCount: 1
   image:
-    repository: registry.digitalocean.com/mdr/wt-webserver
+    repository: ghcr.io/england2/webterm-webserver
     pullPolicy: IfNotPresent
     tag: latest
   command:
@@ -70,7 +71,7 @@ manager:
   enabled: true
   replicaCount: 1
   image:
-    repository: registry.digitalocean.com/mdr/pseudo-terminal-manager
+    repository: ghcr.io/england2/webterm-pseudo-terminal-manager
     pullPolicy: IfNotPresent
     tag: latest
   command:
@@ -100,7 +101,7 @@ terminals:
   replicaCount: 3
   podManagementPolicy: OrderedReady
   image:
-    repository: registry.digitalocean.com/mdr/pseudo-terminal
+    repository: ghcr.io/england2/webterm-pseudo-terminal
     pullPolicy: IfNotPresent
     tag: latest
   command: []
