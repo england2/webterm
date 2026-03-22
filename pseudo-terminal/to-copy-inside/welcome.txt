@@ -3,6 +3,6 @@ Congratulations, you are connected to a web terminal!
 From here, you can play command line games, explore a unix environment, or SHH into any box of your choice
 
 If you want to see the program serving this connection, you can even run
-$ vim /app/containerPTY.js 
+$ vim /app/containerPseudoTerminal.js
 
 Have fun!

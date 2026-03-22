@@ -51,7 +51,7 @@ spec:
           env:
             - name: LISTENPORT
               value: {{ .Values.webserver.service.port | quote }}
-            - name: PTY_MANAGER_ADDR
+            - name: PSEUDO_TERMINAL_MANAGER_ADDR
               value: "http://{{ include "webterm.managerFullname" . }}:{{ .Values.manager.service.port }}"
             - name: CORS_ALLOW_ORIGIN
               value: {{ .Values.webserver.corsAllowOrigin | quote }}

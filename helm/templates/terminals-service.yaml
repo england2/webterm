@@ -10,9 +10,9 @@ spec:
   publishNotReadyAddresses: true
   ports:
     - port: {{ .Values.terminals.containerPort }}
-      targetPort: pty
+      targetPort: pseudo-terminal
       protocol: TCP
-      name: pty
+      name: pseudo-terminal
   selector:
     {{- include "webterm.componentSelectorLabels" (dict "root" . "component" "terminals") | nindent 4 }}
 {{- end }}

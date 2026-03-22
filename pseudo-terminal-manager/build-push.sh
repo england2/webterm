@@ -1,7 +1,7 @@
 #!/bin/sh
 set -e
 
-docker build -t man-pty . -f $1
+docker build -t pseudo-terminal-manager . -f $1
 
-docker tag man-pty registry.digitalocean.com/mdr/man-pty
-docker push registry.digitalocean.com/mdr/man-pty
+docker tag pseudo-terminal-manager registry.digitalocean.com/mdr/pseudo-terminal-manager
+docker push registry.digitalocean.com/mdr/pseudo-terminal-manager

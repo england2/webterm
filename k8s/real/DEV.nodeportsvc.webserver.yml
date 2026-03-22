@@ -1,11 +1,11 @@
-# k -n ptys expose pod webserver-5f94d8f8d-tclwx --target-port=5252 --name=dev-web-npsvc --type='NodePort'
+# k -n pseudo-terminals expose pod webserver-5f94d8f8d-tclwx --target-port=5252 --name=dev-web-npsvc --type='NodePort'
 apiVersion: v1
 kind: Service
 metadata:
   labels:
     app: webserver
   name: dev-web-npsvc
-  namespace: ptys
+  namespace: pseudo-terminals
 spec:
   externalTrafficPolicy: Cluster
   internalTrafficPolicy: Cluster

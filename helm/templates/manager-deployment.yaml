@@ -53,9 +53,9 @@ spec:
                 fieldRef:
                   apiVersion: v1
                   fieldPath: metadata.namespace
-            - name: PTY_STATEFULSET_NAME
+            - name: PSEUDO_TERMINAL_STATEFULSET_NAME
               value: {{ include "webterm.terminalsFullname" . | quote }}
-            - name: PTY_SERVICE_PORT
+            - name: PSEUDO_TERMINAL_SERVICE_PORT
               value: {{ .Values.terminals.containerPort | quote }}
             {{- with .Values.manager.env }}
             {{- toYaml . | nindent 12 }}

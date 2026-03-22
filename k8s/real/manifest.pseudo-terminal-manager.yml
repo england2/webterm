@@ -1,0 +1,48 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: pseudo-terminal-manager
+  namespace: pseudo-terminals
+  labels:
+    app: pseudo-terminal-manager
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pseudo-terminal-manager
+  template:
+    metadata:
+      labels:
+        app: pseudo-terminal-manager
+    spec:
+      # pseudo-terminal-manager-internal-svc.pseudo-terminals.svc.cluster.local
+      hostname: pseudo-terminal-manager
+      subdomain: p1
+      serviceAccount: pseudo-terminal-manager-account
+      serviceAccountName: pseudo-terminal-manager-account
+      imagePullSecrets:
+        - name: mdr
+      containers:
+        - name: pseudo-terminal-manager
+          image: registry.digitalocean.com/mdr/pseudo-terminal-manager
+          env:
+            - name: GINPORT
+              value: "6262"
+          ports:
+            - name: gin-api
+              containerPort: 6262
+          command: ["sleep"]
+          args: ["infinity"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pseudo-terminal-manager-internal-svc
+  namespace: pseudo-terminals
+spec:
+  selector:
+    app: pseudo-terminal-manager
+  ports:
+    - protocol: TCP
+      port: 6262
+      targetPort: 6262

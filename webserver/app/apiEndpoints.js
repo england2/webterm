@@ -1,7 +1,12 @@
 const needle = require("needle");
 
-const defaultPtyManAddr = "http://man-pty:6262";
-const ptyManAddr = (process.env.PTY_MANAGER_ADDR || defaultPtyManAddr).replace(
+const defaultPseudoTerminalManagerAddr =
+    "http://pseudo-terminal-manager:6262";
+const pseudoTerminalManagerAddr = (
+    process.env.PSEUDO_TERMINAL_MANAGER_ADDR ||
+    process.env.PTY_MANAGER_ADDR ||
+    defaultPseudoTerminalManagerAddr
+).replace(
     /\/+$/,
     ""
 );
@@ -28,7 +33,7 @@ function killUserPod(req, res) {
     console.log("in killUserPod");
     console.log("- request -\n", req.body); //t
 
-    let addr = ptyManAddr + "/killUserPod";
+    let addr = pseudoTerminalManagerAddr + "/killUserPod";
 
     let podKillPromise = needlePostPromise(addr, req.body);
 
@@ -48,12 +53,12 @@ function killUserPod(req, res) {
     );
 }
 
-function getPtyAddress(req, res) {
-    console.log("in getPtyAddress");
+function getPseudoTerminalAddress(req, res) {
+    console.log("in getPseudoTerminalAddress");
     console.log("- request -\n", req.body); //t
     clientIP = req.body.IP;
 
-    let addr = ptyManAddr + "/getIP";
+    let addr = pseudoTerminalManagerAddr + "/getPseudoTerminalAddress";
     let reqBody = { ip: clientIP };
     let addrPromise = needlePostPromise(addr, reqBody);
 
@@ -73,4 +78,7 @@ function getPtyAddress(req, res) {
     );
 }
 
-module.exports = { getPtyAddress, ptyManAddr };
+module.exports = {
+    getPseudoTerminalAddress,
+    pseudoTerminalManagerAddr,
+};

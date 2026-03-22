@@ -2,7 +2,7 @@ kind: Deployment
 apiVersion: apps/v1
 metadata:
   name: webserver
-  namespace: ptys
+  namespace: pseudo-terminals
   labels:
     app: webserver
 spec:

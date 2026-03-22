@@ -147,7 +147,7 @@ function runTerm(address) {
     xterm_resize_ob.observe(termElement);
 }
 
-// var idleMax = 10 * 60; // must be synced between containerPTY.js
+// var idleMax = 10 * 60; // must be synced between containerPseudoTerminal.js
 var idleMax = 2 * 60;
 var idleCount = 0;
 function timeout() {
@@ -179,7 +179,7 @@ function secToMin(secs) {
 }
 
 function startTermWithAddress(clientIP) {
-    let url = nodeServerAddr + "getPtyAddress";
+    let url = nodeServerAddr + "getPseudoTerminalAddress";
     let toSend = {
         IP: clientIP,
     };

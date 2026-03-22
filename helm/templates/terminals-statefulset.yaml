@@ -49,13 +49,13 @@ spec:
             {{- toYaml . | nindent 12 }}
           {{- end }}
           env:
-            - name: PTY_MANAGER_ADDR
+            - name: PSEUDO_TERMINAL_MANAGER_ADDR
               value: "http://{{ include "webterm.managerFullname" . }}:{{ .Values.manager.service.port }}"
             {{- with .Values.terminals.env }}
             {{- toYaml . | nindent 12 }}
             {{- end }}
           ports:
-            - name: pty
+            - name: pseudo-terminal
               containerPort: {{ .Values.terminals.containerPort }}
               protocol: TCP
           {{- with .Values.terminals.resources }}

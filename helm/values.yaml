@@ -70,11 +70,11 @@ manager:
   enabled: true
   replicaCount: 1
   image:
-    repository: registry.digitalocean.com/mdr/man-pty
+    repository: registry.digitalocean.com/mdr/pseudo-terminal-manager
     pullPolicy: IfNotPresent
     tag: latest
   command:
-    - /app/man-pty
+    - /app/pseudo-terminal-manager
   args: []
   podAnnotations: {}
   podLabels: {}
@@ -100,7 +100,7 @@ terminals:
   replicaCount: 3
   podManagementPolicy: OrderedReady
   image:
-    repository: registry.digitalocean.com/mdr/pty
+    repository: registry.digitalocean.com/mdr/pseudo-terminal
     pullPolicy: IfNotPresent
     tag: latest
   command: []

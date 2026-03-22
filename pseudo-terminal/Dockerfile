@@ -18,4 +18,4 @@ RUN npm install
 
 RUN rm -rf /var/cache/apk/*
 
-CMD ["node", "/app/containerPTY.js"]
+CMD ["node", "/app/containerPseudoTerminal.js"]

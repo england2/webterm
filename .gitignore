@@ -2,6 +2,6 @@ source-examples
 node_modules
 traefik-helm-chart/
 testing/js/
-man-pty-CONTAINER/golang/go/
-man-pty-CONTAINER/man-pty-api/man-pty
+pseudo-terminal-manager/golang/go/
+pseudo-terminal-manager/pseudo-terminal-manager-api/pseudo-terminal-manager
 %GI*

@@ -2,8 +2,6 @@
 const endpoints = require("./apiEndpoints");
 const bodyParser = require("body-parser");
 const express = require("express");
-const pty = require("node-pty");
-const os = require("os");
 
 const app = express();
 app.use(bodyParser.text());
@@ -23,7 +21,10 @@ app.use((req, res, next) => {
 
 //app
 function main() {
-    app.post("/getPtyAddress", endpoints.getPtyAddress);
+    app.post(
+        "/getPseudoTerminalAddress",
+        endpoints.getPseudoTerminalAddress
+    );
 
     app.use(express.static("public"));
 
