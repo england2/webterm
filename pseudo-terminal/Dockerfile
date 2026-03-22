@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     make \
     g++ \
     openssh-client \
+    fish \
     bat \
     dnsutils \
     vim \
