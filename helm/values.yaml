@@ -2,14 +2,13 @@ imagePullSecrets:
   - name: ghcr-secret
 nameOverride: ""
 fullnameOverride: ""
-
 webserver:
   enabled: true
   replicaCount: 1
   image:
     repository: ghcr.io/england2/webterm-webserver
     pullPolicy: IfNotPresent
-    tag: latest
+    tag: e8f1be174cbf555cdf711989aa52bb968618dc29
   command:
     - node
     - /app/server.js
@@ -66,14 +65,13 @@ webserver:
           - path:
               type: PathPrefix
               value: /
-
 manager:
   enabled: true
   replicaCount: 1
   image:
     repository: ghcr.io/england2/webterm-pseudo-terminal-manager
     pullPolicy: IfNotPresent
-    tag: latest
+    tag: e8f1be174cbf555cdf711989aa52bb968618dc29
   command:
     - /app/pseudo-terminal-manager
   args: []
@@ -95,7 +93,6 @@ manager:
   nodeSelector: {}
   tolerations: []
   affinity: {}
-
 terminals:
   enabled: true
   replicaCount: 3
@@ -103,7 +100,7 @@ terminals:
   image:
     repository: ghcr.io/england2/webterm-pseudo-terminal
     pullPolicy: IfNotPresent
-    tag: latest
+    tag: e8f1be174cbf555cdf711989aa52bb968618dc29
   command: []
   args: []
   podAnnotations: {}
