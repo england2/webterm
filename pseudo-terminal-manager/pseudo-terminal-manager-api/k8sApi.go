@@ -220,19 +220,32 @@ func printList() {
 func exposePod(v1pod *v1.Pod) {
 
 	svcName := v1pod.Name + "-npsvc"
-	appLabel := v1pod.Labels["app"]
-	labelSelectorMap := map[string]string{"app": appLabel,
-		"statefulset.kubernetes.io/pod-name": v1pod.Name}
+	selectorLabels := map[string]string{
+		"statefulset.kubernetes.io/pod-name": v1pod.Name,
+	}
+	serviceLabels := map[string]string{
+		"statefulset.kubernetes.io/pod-name": v1pod.Name,
+	}
+
+	for _, key := range []string{
+		"app.kubernetes.io/name",
+		"app.kubernetes.io/instance",
+		"app.kubernetes.io/component",
+	} {
+		if value := v1pod.Labels[key]; value != "" {
+			serviceLabels[key] = value
+		}
+	}
 
 	service := &v1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      svcName,
 			Namespace: namespace,
-			Labels:    labelSelectorMap,
+			Labels:    serviceLabels,
 		},
 		Spec: v1.ServiceSpec{
 			Type:     v1.ServiceTypeNodePort,
-			Selector: labelSelectorMap,
+			Selector: selectorLabels,
 			Ports: []v1.ServicePort{{
 				Port:       int32(pseudoTerminalServicePort),
 				TargetPort: intstr.FromInt(pseudoTerminalServicePort),
