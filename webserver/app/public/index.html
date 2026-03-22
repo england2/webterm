@@ -1,25 +1,11 @@
 <!DOCTYPE html>
 <html>
-
 <head>
     <title>Web Term</title>
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="lib/xterm.css" />
-    <script type="module" src="lib/xterm.js"></script>
-    <script type="module" src="lib/xterm-addon-fit.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"
-        integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI"
-        crossorigin="anonymous"></script>
 </head>
-
-<script type="module">
-    import * as FitAddon from "./lib/xterm-addon-fit.js";
-</script>
-
-<script type="module" src="index.js"></script>
-
-</html>
-
+<body>
 
 <!-- lost connection -->
 
@@ -161,4 +147,11 @@
 <div class="overlay hidden"></div>
 <button style="visibility: hidden" class="btn btn-open">Open Modal</button>
 
+<script src="lib/xterm.js"></script>
+<script src="lib/xterm-addon-fit.js"></script>
+<script src="https://cdn.socket.io/4.5.4/socket.io.min.js"
+    integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI"
+    crossorigin="anonymous"></script>
 <script src="index.js"></script>
+</body>
+</html>

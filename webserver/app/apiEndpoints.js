@@ -1,7 +1,7 @@
 const needle = require("needle");
 
 const defaultPseudoTerminalManagerAddr =
-    "http://pseudo-terminal-manager:6262";
+    "http://webterm-manager:6262";
 const pseudoTerminalManagerAddr = (
     process.env.PSEUDO_TERMINAL_MANAGER_ADDR ||
     process.env.PTY_MANAGER_ADDR ||
@@ -17,16 +17,44 @@ function needlePostPromise(addr, reqBody) {
             if (!err) {
                 console.log("- response -\n", resp.body); //t
                 resolve(resp.body);
+                return;
             }
 
             if (err) {
                 console.log(err);
                 reject(err);
+                return;
             }
-
-            reject(new Error("reached end"));
         });
     });
+}
+
+function getRequestProtocol(req) {
+    return (req.get("x-forwarded-proto") || req.protocol || "http")
+        .split(",")[0]
+        .trim();
+}
+
+function extractPort(address) {
+    if (!address) {
+        return "";
+    }
+
+    try {
+        return new URL(address).port;
+    } catch (error) {
+        const match = address.match(/:(\d+)$/);
+        return match ? match[1] : "";
+    }
+}
+
+function buildBrowserAddress(req, rawAddress) {
+    const port = extractPort(rawAddress);
+    if (!port) {
+        return rawAddress;
+    }
+
+    return `${getRequestProtocol(req)}://${req.hostname}:${port}`;
 }
 
 function killUserPod(req, res) {
@@ -56,7 +84,7 @@ function killUserPod(req, res) {
 function getPseudoTerminalAddress(req, res) {
     console.log("in getPseudoTerminalAddress");
     console.log("- request -\n", req.body); //t
-    clientIP = req.body.IP;
+    const clientIP = req.body.IP;
 
     let addr = pseudoTerminalManagerAddr + "/getPseudoTerminalAddress";
     let reqBody = { ip: clientIP };
@@ -70,10 +98,12 @@ function getPseudoTerminalAddress(req, res) {
             let eq = "========================"; //t
             console.log(`${eq}${eq}${eq}${eq}`); //t
 
+            result.ip = buildBrowserAddress(req, result.ip);
             res.send(result);
         },
         (error) => {
             console.error(error);
+            res.status(502).send({ error: "failed to get pseudo-terminal address" });
         }
     );
 }

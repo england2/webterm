@@ -78,13 +78,6 @@ term.loadAddon(fitaddon);
 
 fitaddon.fit();
 
-// ==== program ====
-function getClientIP() {
-    let url =
-        "https://ipgeolocation.abstractapi.com/v1/?api_key=3cf2f915e01c4d83a3b0e7b887e962d5";
-    return postAsyncPromise("GET", url, null);
-}
-
 function postAsyncPromise(mode, url, toSend) {
     const xhr = new XMLHttpRequest();
 
@@ -92,31 +85,40 @@ function postAsyncPromise(mode, url, toSend) {
     xhr.open(mode, url, true);
     xhr.setRequestHeader("Content-Type", "application/json");
 
-    // console.log(toSend)
-    xhr.send(toSend);
-
     return new Promise((resolve, reject) => {
-        xhr.onreadystatechange = () => {
-            if (xhr.readyState === XMLHttpRequest.DONE && xhr.status === 200) {
-                // console.log(xhr.response)
-                resolve(xhr.response);
-            } else if (
-                xhr.readyState === XMLHttpRequest.DONE &&
-                xhr.status === 429
-            ) {
-                reject("user refreshed page too quick");
-            }
+        xhr.onerror = () => {
+            reject(new Error(`request failed for ${url}`));
         };
+
+        xhr.onreadystatechange = () => {
+            if (xhr.readyState !== XMLHttpRequest.DONE) {
+                return;
+            }
+
+            if (xhr.status >= 200 && xhr.status < 300) {
+                resolve(xhr.response);
+                return;
+            }
+
+            reject(new Error(`request failed with status ${xhr.status}`));
+        };
+
+        xhr.send(toSend);
     });
 }
 
 var socket;
 
 function runTerm(address) {
-    socket = io.connect(address);
+    socket = io.connect(normalizePseudoTerminalAddress(address));
 
     socket.on("output", (data) => {
         term.write(data);
+    });
+
+    socket.on("connect_error", (error) => {
+        console.error(error);
+        term.write("\r\nUnable to connect to terminal backend.\r\n");
     });
 
     term.onData((data) => {
@@ -145,6 +147,26 @@ function runTerm(address) {
 
     // start observing for resize
     xterm_resize_ob.observe(termElement);
+}
+
+function normalizePseudoTerminalAddress(address) {
+    if (!address) {
+        throw new Error("missing pseudo-terminal address");
+    }
+
+    if (/^https?:\/\//.test(address)) {
+        return address;
+    }
+
+    if (address.startsWith(":")) {
+        return `${window.location.protocol}//${window.location.hostname}${address}`;
+    }
+
+    if (/^[^/]+:\d+$/.test(address)) {
+        return `${window.location.protocol}//${address}`;
+    }
+
+    return address;
 }
 
 // var idleMax = 10 * 60; // must be synced between containerPseudoTerminal.js
@@ -179,7 +201,7 @@ function secToMin(secs) {
 }
 
 function startTermWithAddress(clientIP) {
-    let url = nodeServerAddr + "getPseudoTerminalAddress";
+    let url = "/getPseudoTerminalAddress";
     let toSend = {
         IP: clientIP,
     };
@@ -193,15 +215,14 @@ function startTermWithAddress(clientIP) {
         },
 
         (error) => {
-            log.errror(error);
+            console.error(error);
+            term.write("\r\nUnable to get a terminal address.\r\n");
         }
     );
 }
 
 var clientIP;
 var podName;
-// var nodeServerAddr = "http://localhost:5252";
-var nodeServerAddr = "http://64.227.106.28:31668/"; // TODO hardcoded
 var isTermRunning = false;
 var connectClicked = false;
 //
@@ -226,20 +247,7 @@ function genTabID() {
 indexLoad();
 
 async function startTerm() {
-    getClientIP().then(
-        (result) => {
-            isTermRunning = true;
-            clientIP = result.ip_address;
-            clientIP = sessionStorage.tabID;
-
-            startTermWithAddress(clientIP);
-        },
-
-        async (error) => {
-            console.log(error);
-            console.log("Abstractapi call failed. trying again");
-            await new Promise((r) => setTimeout(r, 1200));
-            startTerm();
-        }
-    );
+    isTermRunning = true;
+    clientIP = sessionStorage.tabID;
+    startTermWithAddress(clientIP);
 }

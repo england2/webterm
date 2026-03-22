@@ -91,6 +91,25 @@ func (pseudoTerminal *pseudoTerminal) getAddress() string {
 	for _, addr := range nodeObj.Status.Addresses {
 		if addr.Type == "ExternalIP" {
 			nodeIP = addr.Address
+			break
+		}
+	}
+
+	if nodeIP == "" {
+		for _, addr := range nodeObj.Status.Addresses {
+			if addr.Type == "InternalIP" {
+				nodeIP = addr.Address
+				break
+			}
+		}
+	}
+
+	if nodeIP == "" {
+		for _, addr := range nodeObj.Status.Addresses {
+			if addr.Type == "Hostname" {
+				nodeIP = addr.Address
+				break
+			}
 		}
 	}
 
