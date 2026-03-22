@@ -1,5 +1,4 @@
-# FROM node:19-alpine3.16
-FROM node:bullseye
+FROM node:20-bullseye
 
 EXPOSE 7070
 
