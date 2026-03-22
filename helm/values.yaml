@@ -1,0 +1,117 @@
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+webserver:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: registry.digitalocean.com/mdr/wt-webserver
+    pullPolicy: IfNotPresent
+    tag: latest
+  command:
+    - node
+    - /app/server.js
+  args: []
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  env: []
+  resources: {}
+  service:
+    type: ClusterIP
+    port: 5252
+  testNodePort:
+    enabled: true
+    nodePort: 30052
+  corsAllowOrigin: "*"
+  livenessProbe:
+    httpGet:
+      path: /
+      port: http
+  readinessProbe:
+    httpGet:
+      path: /
+      port: http
+  autoscaling:
+    enabled: false
+    minReplicas: 1
+    maxReplicas: 5
+    targetCPUUtilizationPercentage: 80
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+  ingress:
+    enabled: false
+    className: ""
+    annotations: {}
+    hosts:
+      - host: chart-example.local
+        paths:
+          - path: /
+            pathType: Prefix
+    tls: []
+  httpRoute:
+    enabled: false
+    annotations: {}
+    parentRefs:
+      - name: gateway
+        sectionName: http
+    hostnames:
+      - chart-example.local
+    rules:
+      - matches:
+          - path:
+              type: PathPrefix
+              value: /
+
+manager:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: registry.digitalocean.com/mdr/man-pty
+    pullPolicy: IfNotPresent
+    tag: latest
+  command:
+    - /app/man-pty
+  args: []
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  env: []
+  resources: {}
+  service:
+    port: 6262
+  serviceAccount:
+    create: true
+    automount: true
+    annotations: {}
+    name: ""
+  rbac:
+    create: true
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+terminals:
+  enabled: true
+  replicaCount: 3
+  podManagementPolicy: OrderedReady
+  image:
+    repository: registry.digitalocean.com/mdr/pty
+    pullPolicy: IfNotPresent
+    tag: latest
+  command: []
+  args: []
+  podAnnotations: {}
+  podLabels: {}
+  podSecurityContext: {}
+  securityContext: {}
+  env: []
+  resources: {}
+  containerPort: 7070
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}

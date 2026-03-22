@@ -1,0 +1,18 @@
+{{- if .Values.terminals.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "webterm.terminalsHeadlessServiceName" . }}
+  labels:
+    {{- include "webterm.componentLabels" (dict "root" . "component" "terminals") | nindent 4 }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  ports:
+    - port: {{ .Values.terminals.containerPort }}
+      targetPort: pty
+      protocol: TCP
+      name: pty
+  selector:
+    {{- include "webterm.componentSelectorLabels" (dict "root" . "component" "terminals") | nindent 4 }}
+{{- end }}

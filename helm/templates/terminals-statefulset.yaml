@@ -1,0 +1,77 @@
+{{- if .Values.terminals.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "webterm.terminalsFullname" . }}
+  labels:
+    {{- include "webterm.componentLabels" (dict "root" . "component" "terminals") | nindent 4 }}
+spec:
+  serviceName: {{ include "webterm.terminalsHeadlessServiceName" . }}
+  podManagementPolicy: {{ .Values.terminals.podManagementPolicy }}
+  replicas: {{ .Values.terminals.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "webterm.componentSelectorLabels" (dict "root" . "component" "terminals") | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.terminals.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "webterm.componentSelectorLabels" (dict "root" . "component" "terminals") | nindent 8 }}
+        {{- with .Values.terminals.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminals.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: terminal
+          {{- with .Values.terminals.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.terminals.image.repository }}:{{ .Values.terminals.image.tag }}"
+          imagePullPolicy: {{ .Values.terminals.image.pullPolicy }}
+          {{- with .Values.terminals.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.terminals.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: PTY_MANAGER_ADDR
+              value: "http://{{ include "webterm.managerFullname" . }}:{{ .Values.manager.service.port }}"
+            {{- with .Values.terminals.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: pty
+              containerPort: {{ .Values.terminals.containerPort }}
+              protocol: TCP
+          {{- with .Values.terminals.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.terminals.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminals.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.terminals.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

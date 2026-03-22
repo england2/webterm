@@ -1,0 +1,51 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: nettest
+  labels:
+    app: nettest
+
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nettest
+  template:
+    metadata:
+      labels:
+        app: nettest
+    spec:
+      containers:
+        - name: nettest
+          image: registry.digitalocean.com/mdr/network-testing-container
+          ports:
+            - name: web
+              containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: traefik-backend-service-nettest
+spec:
+  ports:
+    - name: web
+      port: 80
+      targetPort: web
+  selector:
+    app: nettest
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: nettest-ingress
+spec:
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: traefik-backend-service-nettest
+                port:
+                  name: web

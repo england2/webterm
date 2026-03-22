@@ -1,0 +1,89 @@
+{{- if .Values.webserver.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "webterm.webserverFullname" . }}
+  labels:
+    {{- include "webterm.componentLabels" (dict "root" . "component" "webserver") | nindent 4 }}
+spec:
+  {{- if not .Values.webserver.autoscaling.enabled }}
+  replicas: {{ .Values.webserver.replicaCount }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "webterm.componentSelectorLabels" (dict "root" . "component" "webserver") | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.webserver.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "webterm.componentSelectorLabels" (dict "root" . "component" "webserver") | nindent 8 }}
+        {{- with .Values.webserver.podLabels }}
+        {{- toYaml . | nindent 8 }}
+        {{- end }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webserver.podSecurityContext }}
+      securityContext:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: webserver
+          {{- with .Values.webserver.securityContext }}
+          securityContext:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          image: "{{ .Values.webserver.image.repository }}:{{ .Values.webserver.image.tag }}"
+          imagePullPolicy: {{ .Values.webserver.image.pullPolicy }}
+          {{- with .Values.webserver.command }}
+          command:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.webserver.args }}
+          args:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          env:
+            - name: LISTENPORT
+              value: {{ .Values.webserver.service.port | quote }}
+            - name: PTY_MANAGER_ADDR
+              value: "http://{{ include "webterm.managerFullname" . }}:{{ .Values.manager.service.port }}"
+            - name: CORS_ALLOW_ORIGIN
+              value: {{ .Values.webserver.corsAllowOrigin | quote }}
+            {{- with .Values.webserver.env }}
+            {{- toYaml . | nindent 12 }}
+            {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.webserver.service.port }}
+              protocol: TCP
+          {{- with .Values.webserver.livenessProbe }}
+          livenessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.webserver.readinessProbe }}
+          readinessProbe:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- with .Values.webserver.resources }}
+          resources:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+      {{- with .Values.webserver.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webserver.affinity }}
+      affinity:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      {{- with .Values.webserver.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+{{- end }}

@@ -1,0 +1,43 @@
+{{- if and .Values.webserver.enabled .Values.webserver.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "webterm.webserverFullname" . }}
+  labels:
+    {{- include "webterm.componentLabels" (dict "root" . "component" "webserver") | nindent 4 }}
+  {{- with .Values.webserver.ingress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- with .Values.webserver.ingress.className }}
+  ingressClassName: {{ . }}
+  {{- end }}
+  {{- if .Values.webserver.ingress.tls }}
+  tls:
+    {{- range .Values.webserver.ingress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range .Values.webserver.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- with .pathType }}
+            pathType: {{ . }}
+            {{- end }}
+            backend:
+              service:
+                name: {{ include "webterm.webserverFullname" $ }}
+                port:
+                  number: {{ $.Values.webserver.service.port }}
+          {{- end }}
+    {{- end }}
+{{- end }}

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: web-term
+description: Deploy the webserver, manager API, and terminal workers for web-term
+type: application
+version: 0.1.0
+appVersion: "latest"

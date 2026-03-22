@@ -1,0 +1,11 @@
+# TODO test alpine
+FROM debian
+
+RUN apt-get update && apt-get install -y --no-install-recommends bash ca-certificates
+# RUN rm -rf /var/lib/apt/lists/*
+WORKDIR /app/
+
+
+EXPOSE 6262
+COPY start.sh /root/
+CMD ["sleep", "infinity"]

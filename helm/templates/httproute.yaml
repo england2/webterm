@@ -1,0 +1,38 @@
+{{- if and .Values.webserver.enabled .Values.webserver.httpRoute.enabled -}}
+{{- $fullName := include "webterm.webserverFullname" . -}}
+{{- $svcPort := .Values.webserver.service.port -}}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ $fullName }}
+  labels:
+    {{- include "webterm.componentLabels" (dict "root" . "component" "webserver") | nindent 4 }}
+  {{- with .Values.webserver.httpRoute.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  parentRefs:
+    {{- with .Values.webserver.httpRoute.parentRefs }}
+      {{- toYaml . | nindent 4 }}
+    {{- end }}
+  {{- with .Values.webserver.httpRoute.hostnames }}
+  hostnames:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.webserver.httpRoute.rules }}
+    {{- with .matches }}
+    - matches:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+    {{- with .filters }}
+      filters:
+      {{- toYaml . | nindent 8 }}
+    {{- end }}
+      backendRefs:
+        - name: {{ $fullName }}
+          port: {{ $svcPort }}
+          weight: 1
+    {{- end }}
+{{- end }}

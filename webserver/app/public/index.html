@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Web Term</title>
+    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="lib/xterm.css" />
+    <script type="module" src="lib/xterm.js"></script>
+    <script type="module" src="lib/xterm-addon-fit.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"
+        integrity="sha384-/KNQL8Nu5gCHLqwqfQjA689Hhoqgi2S84SNUxC3roTe4EhJ9AfLkp8QiQcU8AMzI"
+        crossorigin="anonymous"></script>
+</head>
+
+<script type="module">
+    import * as FitAddon from "./lib/xterm-addon-fit.js";
+</script>
+
+<script type="module" src="index.js"></script>
+
+</html>
+
+
+<!-- lost connection -->
+
+<!-- inactivity warning -->
+<section class="modal hidden modalWarn">
+    <div style="margin-top: -0.001rem; align-items: end; text-align: right" class="flex">
+        <button class="btn-close">⨉</button>
+        <img style="margin-bottom: -0rem" src="term.ico" width="48px" height="48px" alt="user" />
+        <h3> Still there?</h3>
+    </div>
+    <div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0rem">SPACER</p>
+        <div style="padding-left: 0%; padding-right: 0%">
+            <p>
+                Due to inactivity, you will lose your connection in
+            </p>
+            <p id="timeCounter">
+                {time}
+            </p>
+        </div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0.5rem">SPACER</p>
+        <p>
+            Press <strong>Enter</strong> to continue using the terminal
+
+        </p>
+
+</section>
+
+<!-- intro -->
+<section class="modal hidden modalIntro">
+    <div style="margin-top: -0.001rem; align-items: end; text-align: right" class="flex">
+        <button class="btn-close">⨉</button>
+        <img style="margin-bottom: -0rem" src="term.ico" width="48px" height="48px" alt="user" />
+        <h3> Welcome</h3>
+    </div>
+    <div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0rem">SPACER</p>
+        <div style="padding-left: 5%; padding-right: 5%; text-align: justify">
+            <p>
+                <strong>Webterm </strong>is a project by <a href="TODO">Elan England</a>. It utilizes
+                Kubernetes to spawn Debian containers that users may access through a web based
+                command-line. This service is a proof of concept, so please don't use it for anything important.
+            </p>
+        </div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0rem">SPACER</p>
+        <p>
+            See the <a href="TODO">project writeup</a> for more info. </a>
+        </p>
+
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0.5rem">SPACER</p>
+
+        <div style="padding-left: 6%; padding-right: 6%; padding-bottom: 0.2rem;">
+            <button id="connectToTerminal" class="btn">Connect to a Terminal</button>
+            <!-- <button class="btn">View Project Writeup</button> -->
+        </div>
+</section>
+
+
+<!-- modalReconn -->
+<section class="modal hidden modalReconn">
+    <div tabindex="0" style="margin-top: -0.001rem; align-items: end; text-align: right" class="flex">
+        <button class="btn-close">⨉</button>
+        <img style="margin-bottom: -0rem" src="term.ico" width="50px" height="50px" alt="user" />
+        <h3> Welcome Back</h3>
+    </div>
+    <div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0rem">SPACER</p>
+        <div style="padding-left: -5%; padding-right: -5%; text-align: justify;">
+            <p>
+                You've been reconnected to your current session.
+            </p>
+        </div>
+        <p style="visibility: hidden; font-size: 0rem">SPACER</p>
+
+        <p text>Press <strong>Enter</strong> to continue</p>
+</section>
+
+<!-- modalReconn -->
+<!-- <section class="modal hidden modalReconn">
+    <div style="margin-top: -0.001rem; align-items: end; text-align: right" class="flex">
+        <button class="btn-close">⨉</button>
+        <img style="margin-bottom: -0rem" src="term.ico" width="50px" height="50px" alt="user" />
+        <h3> Welcome Back</h3>
+    </div>
+    <div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0rem">SPACER</p>
+        <div style="padding-left: 5%; padding-right: 5%; text-align: justify">
+            <p>
+                <strong>Webterm </strong>has saved your old session. You may reconnect to your old session,
+                or connect to a new one. Connecting to a new terminal will kill
+                your old session, and all data on that machine will be lost.
+            </p>
+        </div>
+
+        <p style="visibility: hidden; font-size: 0rem">SPACER</p>
+        <div style="padding-left: 5%; padding-right: 5%; margin-bottom: -0.7rem">
+            <p><strong>Your old session is inactive and will be killed in</strong></p>
+        </div>
+    </div>
+    <p>{time}</p>
+
+    <p style="visibility: hidden; font-size: 0rem">SPACER</p>
+
+
+    <div style="padding-left: 6%; padding-right: 6%; padding-bottom: 0.2rem;">
+        <button class="btn">Reconnect to Old</button>
+        <button class="btn">Connect to New</button>
+    </div>
+</section> -->
+
+
+<!-- modalReconnConfirmation -->
+<section class="modal hidden modalReconnConfirmation">
+    <div style="margin-top: -0.001rem; align-items: end; text-align: right" class="flex">
+        <button class="btn-close">⨉</button>
+        <img style="margin-bottom: -0rem" src="term.ico" width="48px" height="48px" alt="user" />
+        <h3> Warning</h3>
+    </div>
+    <div>
+        <p style="visibility: visible; font-size: 0rem; margin-bottom: 0rem">SPACER</p>
+        <div style="padding-left: 5%; padding-right: 5%; text-align: justify">
+            <p>
+                Connecting to a new terminal will kill your old session and <strong>all data will be lost.</strong>
+                Do you want to continue?
+            </p>
+        </div>
+    </div>
+
+    <p style="visibility: hidden; font-size: 0rem">SPACER</p>
+
+
+    <div style="padding-left: 6%; padding-right: 6%; padding-bottom: 0.2rem;">
+        <button class="btn">Yes</button>
+        <button class="btn">No</button>
+    </div>
+</section>
+
+
+<div class="overlay hidden"></div>
+<button style="visibility: hidden" class="btn btn-open">Open Modal</button>
+
+<script src="index.js"></script>

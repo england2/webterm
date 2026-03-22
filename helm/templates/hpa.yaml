@@ -1,0 +1,24 @@
+{{- if and .Values.webserver.enabled .Values.webserver.autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "webterm.webserverFullname" . }}
+  labels:
+    {{- include "webterm.componentLabels" (dict "root" . "component" "webserver") | nindent 4 }}
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "webterm.webserverFullname" . }}
+  minReplicas: {{ .Values.webserver.autoscaling.minReplicas }}
+  maxReplicas: {{ .Values.webserver.autoscaling.maxReplicas }}
+  metrics:
+    {{- if .Values.webserver.autoscaling.targetCPUUtilizationPercentage }}
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: {{ .Values.webserver.autoscaling.targetCPUUtilizationPercentage }}
+    {{- end }}
+{{- end }}

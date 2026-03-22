@@ -1,0 +1,64 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: man-pty-account
+  namespace: ptys
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: man-pty-role
+  namespace: ptys
+rules:
+  - apiGroups: ["", "apps"]
+    resources: ["pods", "services", "statefulsets"]
+    verbs:
+      [
+        "create",
+        "delete",
+        "deletecollection",
+        "get",
+        "list",
+        "patch",
+        "update",
+        "watch",
+      ]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: man-pty-binding
+  namespace: ptys
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: Role
+  name: man-pty-role
+subjects:
+  - kind: ServiceAccount
+    name: man-pty-account
+    namespace: ptys
+## cluster role
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: man-pty-role
+  namespace: ptys
+rules:
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: man-pty-binding
+  namespace: ptys
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: man-pty-role
+subjects:
+  - kind: ServiceAccount
+    name: man-pty-account
+    namespace: ptys

@@ -1,0 +1,19 @@
+web-term installs three workloads:
+  - webserver: {{ include "webterm.webserverFullname" . }}
+  - manager: {{ include "webterm.managerFullname" . }}
+  - terminals: {{ include "webterm.terminalsFullname" . }}
+
+To reach the UI without an ingress:
+  kubectl -n {{ .Release.Namespace }} port-forward svc/{{ include "webterm.webserverFullname" . }} 5252:{{ .Values.webserver.service.port }}
+
+{{- if and .Values.webserver.enabled .Values.webserver.testNodePort.enabled }}
+Test NodePort service:
+  kubectl -n {{ .Release.Namespace }} get svc {{ include "webterm.webserverTestNodePortFullname" . }}
+{{- end }}
+
+{{- if and .Values.webserver.enabled .Values.webserver.ingress.enabled }}
+Ingress hosts:
+{{- range .Values.webserver.ingress.hosts }}
+  - {{ .host }}
+{{- end }}
+{{- end }}

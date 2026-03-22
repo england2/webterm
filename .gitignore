@@ -1,0 +1,7 @@
+source-examples
+node_modules
+traefik-helm-chart/
+testing/js/
+man-pty-CONTAINER/golang/go/
+man-pty-CONTAINER/man-pty-api/man-pty
+%GI*
