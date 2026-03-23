@@ -7,6 +7,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	v1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
@@ -22,6 +23,10 @@ var pseudoTerminalStatefulSetName string
 var pseudoTerminalServicePort int
 var config *rest.Config
 var clientset *kubernetes.Clientset
+
+const minReadyFirstPseudoTerminals = 1
+const waitForAvailablePseudoTerminalTimeout = 2 * time.Minute
+const waitForAvailablePseudoTerminalPollInterval = time.Second
 
 func init() {
 
@@ -79,7 +84,7 @@ type pseudoTerminal struct {
 
 func updateState(pseudoTerminal *pseudoTerminal, newState string) {
 	var isValid bool
-	for _, s := range []string{"ready first", "recreatng", "in use"} {
+	for _, s := range []string{"ready first", "recreating", "in use"} {
 		if newState == s {
 			isValid = true
 		}
@@ -88,24 +93,113 @@ func updateState(pseudoTerminal *pseudoTerminal, newState string) {
 		log.Fatalf("%v IS NOT A VALID STATE\n", newState)
 	}
 
-	checkToScale()
+	pseudoTerminal.state = newState
 
+	if err := checkToScale(); err != nil {
+		log.Printf("failed to scale pseudo-terminals after state update: %v", err)
+	}
 }
 
-// checkToScale ensures the following is true:
-// - there is least one pod in state `ready first`. (ex: if there are 4 pods in
-// state `in use`, the StatefulSet will scale up to 5.)
-// - there are not more than 4 pods in state `ready first` (ex: if there are more
-// than 5 pods in state `ready first`, the StatefulSet will scale down to 3.)
-func checkToScale() {
-
-	scale()
+// checkToScale ensures there is always at least one spare pseudo-terminal in
+// state `ready first`. This only scales up; it does not scale down in order to
+// avoid terminating active sessions unexpectedly.
+func checkToScale() error {
+	return scale()
 }
 
-func scale() {
+func scale() error {
+	updatePseudoTerminalsList()
 
-	// https://stackoverflow.com/questions/61653702/scale-deployment-replicas-with-kubernetes-go-client
+	if countPseudoTerminalsInState("ready first") >= minReadyFirstPseudoTerminals {
+		return nil
+	}
 
+	return setPseudoTerminalReplicas(int32(len(pseudoTerminalList) + 1))
+}
+
+func setPseudoTerminalReplicas(replicaCount int32) error {
+	statefulSetClient := clientset.AppsV1().StatefulSets(namespace)
+	statefulSet, err := statefulSetClient.Get(context.Background(),
+		pseudoTerminalStatefulSetName, metav1.GetOptions{})
+	if err != nil {
+		return err
+	}
+
+	currentReplicas := int32(1)
+	if statefulSet.Spec.Replicas != nil {
+		currentReplicas = *statefulSet.Spec.Replicas
+	}
+
+	if currentReplicas == replicaCount {
+		return nil
+	}
+
+	statefulSet.Spec.Replicas = &replicaCount
+	_, err = statefulSetClient.Update(context.Background(), statefulSet, metav1.UpdateOptions{})
+	if err != nil {
+		return err
+	}
+
+	log.Printf("scaled pseudo-terminal StatefulSet from %d to %d replicas", currentReplicas, replicaCount)
+	return nil
+}
+
+func countPseudoTerminalsInState(state string) int {
+	count := 0
+	for _, pseudoTerminal := range pseudoTerminalList {
+		if pseudoTerminal.state == state {
+			count++
+		}
+	}
+	return count
+}
+
+func isPodReady(v1pod v1.Pod) bool {
+	if v1pod.Status.Phase != v1.PodRunning {
+		return false
+	}
+
+	for _, condition := range v1pod.Status.Conditions {
+		if condition.Type == v1.PodReady {
+			return condition.Status == v1.ConditionTrue
+		}
+	}
+
+	return false
+}
+
+func getAvailablePseudoTerminal() (*pseudoTerminal, error) {
+	for _, pseudoTerminal := range pseudoTerminalList {
+		if pseudoTerminal.state == "ready first" && isPodReady(pseudoTerminal.pod) {
+			return pseudoTerminal, nil
+		}
+	}
+
+	return nil, fmt.Errorf("no ready pseudo-terminal available")
+}
+
+func getOrCreateAvailablePseudoTerminal() (*pseudoTerminal, error) {
+	updatePseudoTerminalsList()
+
+	if pseudoTerminal, err := getAvailablePseudoTerminal(); err == nil {
+		return pseudoTerminal, nil
+	}
+
+	if err := checkToScale(); err != nil {
+		return nil, err
+	}
+
+	deadline := time.Now().Add(waitForAvailablePseudoTerminalTimeout)
+	for time.Now().Before(deadline) {
+		time.Sleep(waitForAvailablePseudoTerminalPollInterval)
+		updatePseudoTerminalsList()
+
+		if pseudoTerminal, err := getAvailablePseudoTerminal(); err == nil {
+			return pseudoTerminal, nil
+		}
+	}
+
+	return nil, fmt.Errorf("timed out waiting for an available pseudo-terminal")
 }
 
 type pseudoTerminalFn func(pseudoTerminal) string
@@ -160,24 +254,33 @@ func updatePseudoTerminalsList() {
 
 	fmt.Printf("len(podList.Items): %v\n", len(podList.Items)) //t
 
-	for _, v1pod := range podList.Items {
-		if isManagedPseudoTerminalName(v1pod.Name) {
-			// errors if pod is not in pseudoTerminalList
-			_, err := getPseudoTerminalByAny(func(p pseudoTerminal) string {
-				return p.pod.Name
-			}, v1pod.Name)
-
-			if err != nil {
-				pseudoTerminalList = append(pseudoTerminalList, &pseudoTerminal{
-					pod:    v1pod,
-					svc:    getAssociatedSvc(&v1pod),
-					state:  "ready first",
-					userIP: "none",
-				})
-
-			}
-		}
+	currentPseudoTerminals := make(map[string]*pseudoTerminal, len(pseudoTerminalList))
+	for _, pseudoTerminal := range pseudoTerminalList {
+		currentPseudoTerminals[pseudoTerminal.pod.Name] = pseudoTerminal
 	}
+
+	nextPseudoTerminalList := make([]*pseudoTerminal, 0, len(podList.Items))
+	for _, v1pod := range podList.Items {
+		if !isManagedPseudoTerminalName(v1pod.Name) {
+			continue
+		}
+
+		if pseudoTerminal, ok := currentPseudoTerminals[v1pod.Name]; ok {
+			pseudoTerminal.pod = v1pod
+			pseudoTerminal.svc = getAssociatedSvc(&v1pod)
+			nextPseudoTerminalList = append(nextPseudoTerminalList, pseudoTerminal)
+			continue
+		}
+
+		nextPseudoTerminalList = append(nextPseudoTerminalList, &pseudoTerminal{
+			pod:    v1pod,
+			svc:    getAssociatedSvc(&v1pod),
+			state:  "ready first",
+			userIP: "none",
+		})
+	}
+
+	pseudoTerminalList = nextPseudoTerminalList
 }
 
 // used to populate v1.Service in pseudoTerminalList

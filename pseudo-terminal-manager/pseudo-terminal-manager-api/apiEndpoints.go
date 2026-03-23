@@ -45,6 +45,7 @@ func getPseudoTerminalAddress(c *gin.Context) {
 	fmt.Printf("incomingJson.IP: %v\n", incomingJson.IP) //t
 
 	// reconnect
+	updatePseudoTerminalsList()
 	pseudoTerminalA, err := getPseudoTerminalByAny(func(pseudoTerminal pseudoTerminal) string { return pseudoTerminal.userIP },
 		incomingJson.IP)
 	if err == nil {
@@ -57,25 +58,23 @@ func getPseudoTerminalAddress(c *gin.Context) {
 	}
 
 	// first connect
-	pseudoTerminalB, err := getPseudoTerminalByAny(func(pseudoTerminal pseudoTerminal) string { return pseudoTerminal.state },
-		"ready first")
+	pseudoTerminalB, err := getOrCreateAvailablePseudoTerminal()
 	if err == nil {
+		updateState(pseudoTerminalB, "in use")
+		pseudoTerminalB.userIP = incomingJson.IP
+
 		c.IndentedJSON(200, jsonStruct{
 			IP:      pseudoTerminalB.getAddress(),
 			PODNAME: pseudoTerminalB.pod.Name,
 			STATUS:  "first connect",
 		})
-		pseudoTerminalB.state = "in use"
-		pseudoTerminalB.userIP = incomingJson.IP
 		return
 	}
 
-	// TODO
-	// error
-	c.IndentedJSON(500, jsonStruct{
+	c.IndentedJSON(503, jsonStruct{
 		IP:      "NONE",
 		PODNAME: "NONE",
-		STATUS:  "DEFAULT CASE ERROR",
+		STATUS:  "no pseudo-terminal available",
 	})
 
 	return
@@ -139,7 +138,7 @@ func killUserPod(c *gin.Context) {
 		log.Printf("%v not found in pseudoTerminalList", incomingJson.PODNAME)
 	}
 
-	pseudoTerminal.state = "recreating"
+	updateState(pseudoTerminal, "recreating")
 
 	// delete the pod
 	err = clientset.CoreV1().Pods(namespace).Delete(context.TODO(), incomingJson.PODNAME, metav1.DeleteOptions{})
@@ -200,7 +199,7 @@ func waitUpdatePseudoTerminal(podNameToFilter string, pseudoTerminal *pseudoTerm
 	wg.Wait()
 
 	fmt.Printf("setting %v state to [ready first]\n", podNameToFilter)
-	pseudoTerminal.state = "ready first"
+	updateState(pseudoTerminal, "ready first")
 
 }
 
