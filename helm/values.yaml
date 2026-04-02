@@ -8,7 +8,7 @@ webserver:
   image:
     repository: ghcr.io/england2/webterm-webserver
     pullPolicy: IfNotPresent
-    tag: 170a8500719e458fc958d61169e3187ff530c4aa
+    tag: d7bcf4507c27f1a7bfcb37060b35c84f4fe5519a
   command:
     - node
     - /app/server.js
@@ -71,7 +71,7 @@ manager:
   image:
     repository: ghcr.io/england2/webterm-pseudo-terminal-manager
     pullPolicy: IfNotPresent
-    tag: 170a8500719e458fc958d61169e3187ff530c4aa
+    tag: d7bcf4507c27f1a7bfcb37060b35c84f4fe5519a
   command:
     - /app/pseudo-terminal-manager
   args: []
@@ -100,7 +100,7 @@ terminals:
   image:
     repository: ghcr.io/england2/webterm-pseudo-terminal
     pullPolicy: IfNotPresent
-    tag: 170a8500719e458fc958d61169e3187ff530c4aa
+    tag: d7bcf4507c27f1a7bfcb37060b35c84f4fe5519a
   command: []
   args: []
   podAnnotations: {}
