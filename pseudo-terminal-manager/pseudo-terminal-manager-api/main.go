@@ -19,14 +19,15 @@ func init() {
 	} else {
 		ginAddr = os.Args[1]
 		refreshSpeed, _ = strconv.Atoi(os.Args[2])
-
 	}
-	fmt.Printf("ginAddr: %v, refreshSpeed: %v\n", ginAddr, refreshSpeed)
+	logManagerf("startup args parsed ginAddr=%s refreshSpeed=%d", ginAddr, refreshSpeed)
 }
 
 func debugPrint() {
+	logManagerf("debug printer started refreshSpeed=%d", refreshSpeed)
 	for refreshSpeed != 0 {
 		updatePseudoTerminalsList()
+		logManagerf("debug snapshot %s", pseudoTerminalStateCounts())
 		printList()
 		time.Sleep(time.Second * time.Duration(refreshSpeed))
 		fmt.Println("----------------------------------------------")
@@ -34,7 +35,12 @@ func debugPrint() {
 }
 
 func main() {
-
+	logManagerf(
+		"manager boot namespace=%s statefulSet=%s servicePort=%d",
+		namespace,
+		pseudoTerminalStatefulSetName,
+		pseudoTerminalServicePort,
+	)
 	recreateServices()
 	updatePseudoTerminalsList()
 
@@ -45,5 +51,8 @@ func main() {
 	router.POST("/getPseudoTerminalAddress", getPseudoTerminalAddress)
 	router.POST("/killUserPod", killUserPod)
 
-	router.Run(ginAddr)
+	logManagerf("starting gin server addr=%s", ginAddr)
+	if err := router.Run(ginAddr); err != nil {
+		logManagerf("gin server exited with error: %v", err)
+	}
 }
