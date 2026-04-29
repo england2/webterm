@@ -5,3 +5,6 @@ testing/js/
 pseudo-terminal-manager/golang/go/
 pseudo-terminal-manager/pseudo-terminal-manager-api/pseudo-terminal-manager
 %GI*
+
+# ignore ai
+.codex
