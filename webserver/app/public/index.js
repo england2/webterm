@@ -169,8 +169,9 @@ function normalizePseudoTerminalAddress(address) {
     return address;
 }
 
-// var idleMax = 10 * 60; // must be synced between containerPseudoTerminal.js
-var idleMax = 2 * 60;
+// Keep this in sync with containerPseudoTerminal.js.
+var idleMax = 10 * 60;
+var idleWarnAt = 5 * 60;
 var idleCount = 0;
 function timeout() {
     if (isTermRunning) {
@@ -180,8 +181,7 @@ function timeout() {
             idleMax - idleCount
         );
 
-        // if (idleCount === 3 * 60) {
-        if (idleCount === 20) {
+        if (idleCount === idleWarnAt) {
             modalWarn.open();
         }
 
